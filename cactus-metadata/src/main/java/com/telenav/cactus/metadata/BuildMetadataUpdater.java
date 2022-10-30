@@ -21,10 +21,12 @@ package com.telenav.cactus.metadata;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -81,7 +83,7 @@ public class BuildMetadataUpdater
             try
             {
                 // Get output path and ensure it exists,
-                var outputPath = Path.of(arguments[0]);
+                Path outputPath = Paths.get(arguments[0]);
                 if (!Files.isDirectory(outputPath))
                 {
                     Files.createDirectory(outputPath);
@@ -90,16 +92,16 @@ public class BuildMetadataUpdater
                         = collectAdditionalArguments(arguments);
 
                 // formulate the lines of the build.properties file,
-                var properties = new BuildMetadata(null,
+                Map<String, String> properties = new BuildMetadata(null,
                         BuildMetadata.Type.CURRENT, additionalArguments).buildProperties();
-                var lines = new ArrayList<String>();
-                for (var key : properties.keySet())
+                List<String> lines = new ArrayList<String>();
+                for (String key : properties.keySet())
                 {
                     lines.add(key + " = " + properties.get(key));
                 }
 
                 // and write them to the output folder.
-                try (var out = new PrintStream(outputPath.resolve("build.properties").toFile()))
+                try (PrintStream out = new PrintStream(outputPath.resolve("build.properties").toFile()))
                 {
                     out.println(String.join("\n", lines));
                 }

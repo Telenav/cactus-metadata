@@ -73,8 +73,8 @@ public class BuildName
      */
     public static String name(int buildNumber)
     {
-        var noun = nouns[buildNumber % nouns.length];
-        var adjective = adjectives[(buildNumber / nouns.length) % adjectives.length];
+        String noun = nouns[buildNumber % nouns.length];
+        String adjective = adjectives[(buildNumber / nouns.length) % adjectives.length];
         return adjective + " " + noun;
     }
 }

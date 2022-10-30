@@ -18,6 +18,7 @@
 package com.telenav.cactus.metadata;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -37,8 +39,9 @@ import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
 import static java.util.Collections.emptyMap;
 
 /**
- * Metadata about the calling KivaKit project as well as a program entrypoint that creates this information when called
- * from maven during the build process.
+ * Metadata about the calling KivaKit project as well as a program entrypoint
+ * that creates this information when called from maven during the build
+ * process.
  *
  * @author jonathanl (shibo)
  */
@@ -56,7 +59,9 @@ public class BuildMetadata
 
     public static final String KEY_GIT_REPO_CLEAN = "no-local-modifications";
 
-    /** Metadata for projects */
+    /**
+     * Metadata for projects
+     */
     private static final Map<Class<?>, BuildMetadata> projectToMetadata = new ConcurrentHashMap<>();
 
     /**
@@ -65,7 +70,9 @@ public class BuildMetadata
      */
     public static BuildMetadata buildMetaData(Class<?> projectType)
     {
-        return projectToMetadata.computeIfAbsent(projectType, ignored -> new BuildMetadata(projectType, Type.PROJECT, emptyMap()));
+        return projectToMetadata.computeIfAbsent(projectType,
+                ignored -> new BuildMetadata(projectType, Type.PROJECT,
+                        emptyMap()));
     }
 
     /**
@@ -73,11 +80,12 @@ public class BuildMetadata
      */
     static Map<String, String> properties(String text)
     {
-        var properties = new TreeMap<String, String>();
+        Map<String, String> properties = new TreeMap<String, String>();
         try
         {
-            var pattern = Pattern.compile("(?x) (?<key> [\\w-]+?) \\s* = \\s* (?<value> .*)");
-            var matcher = pattern.matcher(text);
+            Pattern pattern = Pattern.compile(
+                    "(?x) (?<key> [\\w-]+?) \\s* = \\s* (?<value> .*)");
+            Matcher matcher = pattern.matcher(text);
             while (matcher.find())
             {
                 properties.put(matcher.group("key"), matcher.group("value"));
@@ -91,12 +99,13 @@ public class BuildMetadata
 
     static LocalDate todaysLocalDate()
     {
-        return LocalDateTime.now().atZone(ZoneId.of(ZoneOffset.UTC.getId())).toLocalDate();
+        return LocalDateTime.now().atZone(ZoneId.of(ZoneOffset.UTC.getId()))
+                .toLocalDate();
     }
 
     /**
-     * The type of metadata. PROJECT specifies normal project metadata. CURRENT specifies the metadata based on the
-     * current time.
+     * The type of metadata. PROJECT specifies normal project metadata. CURRENT
+     * specifies the metadata based on the current time.
      *
      * @author jonathanl (shibo)
      */
@@ -106,22 +115,33 @@ public class BuildMetadata
         CURRENT
     }
 
-    /** A class in the caller's project for loading resources */
+    /**
+     * A class in the caller's project for loading resources
+     */
     private final Class<?> projectType;
 
-    /** The type of metadata */
+    /**
+     * The type of metadata
+     */
     private final Type type;
 
-    /** Build property map */
+    /**
+     * Build property map
+     */
     Map<String, String> buildProperties;
 
-    /** Project property map */
+    /**
+     * Project property map
+     */
     private Map<String, String> projectProperties;
 
-    /** Additional properties for testing purposes */
+    /**
+     * Additional properties for testing purposes
+     */
     private final Map<String, String> additionalProperties;
 
-    BuildMetadata(Class<?> projectType, Type type, Map<String, String> additionalProperties)
+    BuildMetadata(Class<?> projectType, Type type,
+            Map<String, String> additionalProperties)
     {
         this.projectType = projectType;
         this.type = type;
@@ -129,7 +149,8 @@ public class BuildMetadata
     }
 
     /**
-     * Retrieves the properties in the /build.properties resource, similar to this:
+     * Retrieves the properties in the /build.properties resource, similar to
+     * this:
      *
      * <pre>
      * build-number = 104
@@ -147,17 +168,21 @@ public class BuildMetadata
             if (type == Type.CURRENT)
             {
                 // then use current build metadata based on the time
-                var properties = new TreeMap<String, String>();
-                properties.put(KEY_BUILD_NUMBER, Integer.toString(currentBuildNumber()));
-                properties.put(KEY_BUILD_DATE, DateTimeFormatter.ofPattern("yyyy.MM.dd").format(currentBuildDate()));
-                properties.put(KEY_BUILD_NAME, BuildName.name(currentBuildNumber()));
+                Map<String, String> properties = new TreeMap<String, String>();
+                properties.put(KEY_BUILD_NUMBER, Integer.toString(
+                        currentBuildNumber()));
+                properties.put(KEY_BUILD_DATE, DateTimeFormatter.ofPattern(
+                        "yyyy.MM.dd").format(currentBuildDate()));
+                properties.put(KEY_BUILD_NAME, BuildName.name(
+                        currentBuildNumber()));
                 properties.putAll(additionalProperties);
                 buildProperties = properties;
             }
             else
             {
                 // otherwise, use the project's metadata.
-                buildProperties = properties(metadata(projectType, "/build.properties"));
+                buildProperties = properties(metadata(projectType,
+                        "/build.properties"));
                 buildProperties.putAll(additionalProperties);
             }
         }
@@ -166,7 +191,8 @@ public class BuildMetadata
     }
 
     /**
-     * Returns the build number for the given date in days since {@link BuildName#TELENAV_EPOCH_DAY}
+     * Returns the build number for the given date in days since
+     * {@link BuildName#TELENAV_EPOCH_DAY}
      */
     public int currentBuildNumber()
     {
@@ -184,7 +210,8 @@ public class BuildMetadata
     }
 
     /**
-     * Get the timestamp of the git commit that originated the library this metadata is for, if recorded.
+     * Get the timestamp of the git commit that originated the library this
+     * metadata is for, if recorded.
      *
      * @return A git timestamp, if present.
      */
@@ -192,15 +219,18 @@ public class BuildMetadata
     {
         // We can be called while computing the properties, before buildProperties
         // is set, in which case we need to look in additional instead.
-        Map<String, String> map = buildProperties == null ? additionalProperties : buildProperties;
+        Map<String, String> map = buildProperties == null
+                                  ? additionalProperties
+                                  : buildProperties;
         return Optional.ofNullable(map.get(KEY_GIT_COMMIT_TIMESTAMP))
                 .map(dateString -> ZonedDateTime.parse(dateString,
-                        ISO_DATE_TIME));
+                ISO_DATE_TIME));
     }
 
     /**
-     * Determine whether or not the library was build against locally modified sources, or if you can trust that
-     * building the git commit hash indicated by this metadata will get you the same bits (assuming other libraries are
+     * Determine whether or not the library was build against locally modified
+     * sources, or if you can trust that building the git commit hash indicated
+     * by this metadata will get you the same bits (assuming other libraries are
      * also the same bits).
      *
      * @return True if the repo was definitely clean at build time.
@@ -208,13 +238,14 @@ public class BuildMetadata
     public boolean isCleanRepository()
     {
         Map<String, String> map = buildProperties == null
-                ? additionalProperties
-                : buildProperties;
+                                  ? additionalProperties
+                                  : buildProperties;
         return "true".equals(map.get(KEY_GIT_REPO_CLEAN));
     }
 
     /**
-     * Retrieves the properties in the /project.properties resource, similar to this:
+     * Retrieves the properties in the /project.properties resource, similar to
+     * this:
      *
      * <pre>
      * project-name        = KivaKit - Application
@@ -231,14 +262,16 @@ public class BuildMetadata
     {
         if (projectProperties == null || projectProperties.isEmpty())
         {
-            projectProperties = properties(metadata(projectType, "/project.properties"));
+            projectProperties = properties(metadata(projectType,
+                    "/project.properties"));
         }
 
         return projectProperties;
     }
 
     /**
-     * Get the short 7-character version of the git commit hash, which git itself emits in some cases.
+     * Get the short 7-character version of the git commit hash, which git
+     * itself emits in some cases.
      *
      * @return A short commit hash if present
      */
@@ -252,9 +285,8 @@ public class BuildMetadata
      */
     private static String metadata(Class<?> project, String path)
     {
-        try
+        try (InputStream input = project.getResourceAsStream(path))
         {
-            var input = project.getResourceAsStream(path);
             if (input != null)
             {
                 return new BufferedReader(new InputStreamReader(input))
