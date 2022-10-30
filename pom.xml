@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+<!--  -->
+<!-- © 2011-2022 Telenav, Inc. -->
+<!-- Licensed under Apache License, Version 2.0 -->
+<!--  -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+<project xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance" xmlns = "http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation = "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.telenav</groupId>
+        <artifactId>telenav-root-superpom</artifactId>
+        <version>1.0.6</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.telenav.cactus.metadata</groupId>
+    <artifactId>cactus-metadata-parent</artifactId>
+    <version>1.0.0</version>
+
+    <packaging>pom</packaging>
+
+    <name>Cactus Metadata Parent</name>
+    <description>The cactus project generates build metadata consumed by KivaKit and
+        other projects, and provides a Maven plugin for performing git operations
+        and manipulating large trees of projects managed through git submodules.</description>
+
+    <modules>
+        <module>cactus-metadata</module>
+        <module>cactus-metadata-maven-plugin</module>
+    </modules>
+
+    <properties>
+        <java.source.version>11</java.source.version>
+        <metadata.previous.version>1.5.39</metadata.previous.version>
+        <junit5.version>5.9.1</junit5.version>
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <maven.api.version>3.8.6</maven.api.version>
+        <slf4j.version>2.0.3</slf4j.version>
+        <maven.plugin.plugin.version>3.6.4</maven.plugin.plugin.version>
+        <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+        <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>cactus-metadata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Slf4j -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+
+            <!-- Maven -->
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-plugin-api</artifactId>
+                <version>${maven.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.plugin-tools</groupId>
+                <artifactId>maven-plugin-annotations</artifactId>
+                <version>${maven.plugin.plugin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-core</artifactId>
+                <version>${maven.api.version}</version>
+            </dependency>
+
+            <!-- Junit5 -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit5.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit5.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit5.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+<!--            <plugin>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>cactus-metadata-maven-plugin</artifactId>
+                <version>${cactus.previous.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-metainfo</id>
+                        <goals>
+                            <goal>build-metadata</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>-->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>${nexus-staging-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>${nexusUrl}</nexusUrl>
+                    <skipLocalStaging>true</skipLocalStaging>
+                    <skipNexusStagingDeployMojo>${do.not.publish}</skipNexusStagingDeployMojo>
+                    <autoReleaseAfterClose>${release.on.close}</autoReleaseAfterClose>
+                    <keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${java.source.version}</source>
+                    <testSource>${java.source.version}</testSource>
+                    <target>${java.source.version}</target>
+                    <release>${java.source.version}</release>
+                    <compilerArgs>
+                        <compilerArg>-Xlint:unchecked</compilerArg>
+                        <compilerArg>-Xlint:-requires-transitive-automatic</compilerArg>
+                        <compilerArg>-Xlint:deprecation</compilerArg>
+                    </compilerArgs>
+                </configuration>
+
+            </plugin>
+            
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>cactus-maven-plugin</artifactId>
+                    <version>${cactus.previous.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                    <configuration>
+                        <archive>
+                            <manifestEntries>
+                                <Add-Opens>${java.module.name}/*=ALL-UNNAMED ${java.module.name}/*=maven.core ${java.module.name}/*=maven.plugin.api ${java.module.name}/*=maven.settings ${java.module.name}/*=plexus.classworlds</Add-Opens>
+                                <Add-Exports>${java.module.name}/*=ALL-UNNAMED ${java.module.name}/*=com.google.guice ${java.module.name}/*=maven.core ${java.module.name}/*=maven.plugin.api ${java.module.name}/*=maven.settings ${java.module.name}/*=maven.plugin.api ${java.module.name}/*=plexus.classworlds ${java.module.name}/*=plexus.classworlds@2.6.0</Add-Exports>
+                            </manifestEntries>
+                        </archive>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <developers>
+        <developer>
+            <id>jonathan</id>
+            <name>Jonathan Locke (Luo Shibo)</name>
+            <email>jonathanl@telenav.com</email>
+            <organization>Telenav</organization>
+            <organizationUrl>https://www.telenav.com/</organizationUrl>
+            <roles>
+                <role>lead</role>
+                <role>administrator</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>tim</id>
+            <name>Tim Boudreau</name>
+            <email>tim@timboudreau.com</email>
+            <organization>Telenav</organization>
+            <organizationUrl>https://www.telenav.com/</organizationUrl>
+            <roles>
+                <role>lead</role>
+                <role>administrator</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>haifeng</id>
+            <name>Haifeng Zhu</name>
+            <email>hfzhu@telenav.com</email>
+            <organization>Telenav</organization>
+            <organizationUrl>https://www.telenav.com/</organizationUrl>
+            <roles>
+                <role>developer</role>
+                <role>administrator</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <url>https://kivakit.org</url>
+
+    <inceptionYear>2021</inceptionYear>
+
+    <scm>
+        <connection>scm:git:https://github.com/Telenav/cactus.git</connection>
+        <developerConnection>scm:git:https://github.com/Telenav/cactus.git</developerConnection>
+        <url>https://github.com/Telenav/cactus</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/Telenav/cactus/issues</url>
+    </issueManagement>
+
+</project>
