@@ -19,7 +19,7 @@
 
     <groupId>com.telenav.cactus.metadata</groupId>
     <artifactId>cactus-metadata-parent</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <packaging>pom</packaging>
 
@@ -35,7 +35,7 @@
 
     <properties>
         <java.source.version>11</java.source.version>
-        <metadata.previous.version>1.5.39</metadata.previous.version>
+        <metadata.previous.version>1.0.0</metadata.previous.version>
         <junit5.version>5.9.1</junit5.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven.api.version>3.8.6</maven.api.version>
