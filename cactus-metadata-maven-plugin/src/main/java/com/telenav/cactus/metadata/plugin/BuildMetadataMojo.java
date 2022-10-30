@@ -53,11 +53,11 @@ import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_HASH;
 import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_TIMESTAMP;
 import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_REPO_CLEAN;
 import static com.telenav.cactus.metadata.BuildMetadataUpdater.main;
+import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.delete;
 import static java.nio.file.Files.exists;
-import static java.nio.file.Files.readString;
-import static java.nio.file.Files.writeString;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -159,16 +159,15 @@ public class BuildMetadataMojo extends AbstractMojo
             createDirectories(propsFile.getParent());
         }
         String propertiesFileContent = projectProperties(project);
-        writeString(propsFile, propertiesFileContent,
-                UTF_8, WRITE, TRUNCATE_EXISTING, CREATE);
+        writeString(propsFile, propertiesFileContent);
         List<String> args = new ArrayList<>(8);
         args.add(propsFile.getParent().toString());
         Optional<Path> checkout = checkoutRoot(project.getBasedir().toPath());
-        if (checkout.isEmpty())
+        if (!checkout.isPresent())
         {
             log.warn("Did not find a git checkout for " + project.getBasedir());
         }
-        if (checkout.isPresent())
+        else
         {
             Path repo = checkout.get();
             args.add(KEY_GIT_COMMIT_HASH);
@@ -186,7 +185,7 @@ public class BuildMetadataMojo extends AbstractMojo
                 args.add(when.format(ISO_DATE_TIME));
             });
         }
-        main(args.toArray(String[]::new));
+        main(args.toArray(new String[args.size()]));
         ifVerbose(() ->
         {
             log.info("Wrote project.properties");
@@ -208,6 +207,17 @@ public class BuildMetadataMojo extends AbstractMojo
             }
             return null;
         });
+    }
+
+    private static String readString(Path file) throws IOException
+    {
+        return new String(Files.readAllBytes(file), UTF_8);
+    }
+
+    private static void writeString(Path path, String content) throws IOException
+    {
+        Files.write(path, content.getBytes(UTF_8), WRITE, TRUNCATE_EXISTING,
+                CREATE);
     }
 
     private String projectProperties(MavenProject project)
@@ -234,9 +244,8 @@ public class BuildMetadataMojo extends AbstractMojo
         }
         return null;
     }
-    
-    // To avoid depending on cactus-git:
 
+    // To avoid depending on cactus-git:
     private static Optional<Path> checkoutRoot(Path dir)
     {
         Path curr = dir;
@@ -266,7 +275,12 @@ public class BuildMetadataMojo extends AbstractMojo
         cmd.addAll(Arrays.asList(args));
         ProcessBuilder pb = new ProcessBuilder(cmd);
         prepareGitEnvironment(pb);
-        return Optional.of(pb.start().onExit().get().exitValue() == 0);
+        Process proc = pb.start();
+        while (proc.isAlive())
+        {
+            Thread.sleep(50);
+        }
+        return Optional.of(proc.exitValue() == 0);
     }
 
     private static Optional<String> runGit(Path in, String... args) throws IOException, InterruptedException, ExecutionException
@@ -290,7 +304,12 @@ public class BuildMetadataMojo extends AbstractMojo
         try
         {
             pb.redirectOutput(Redirect.to(tempFile.toFile()));
-            Process proc = pb.start().onExit().get();
+
+            Process proc = pb.start();
+            while (proc.isAlive())
+            {
+                Thread.sleep(50);
+            }
             if (proc.exitValue() != 0)
             {
                 return Optional.empty();
@@ -300,9 +319,9 @@ public class BuildMetadataMojo extends AbstractMojo
         }
         finally
         {
-            if (Files.exists(tempFile))
+            if (exists(tempFile))
             {
-                Files.delete(tempFile);
+                delete(tempFile);
             }
         }
     }
@@ -315,7 +334,7 @@ public class BuildMetadataMojo extends AbstractMojo
 
     private static String newFileName()
     {
-        return "rg-" + System.currentTimeMillis() + "-" + ThreadLocalRandom
+        return "rg-" + currentTimeMillis() + "-" + ThreadLocalRandom
                 .current().nextLong();
     }
 

@@ -22,6 +22,7 @@ import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_TIMESTAMP
 import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_REPO_CLEAN;
 import static com.telenav.cactus.metadata.BuildMetadata.todaysLocalDate;
 import static com.telenav.cactus.metadata.BuildName.toBuildNumber;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,8 +30,10 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+
 import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -41,6 +44,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -252,12 +257,14 @@ public class BuildMetadataTest
         try {
             List<String> allArgs = new LinkedList<>(Arrays.asList(args));
             allArgs.add(0, file.toString());
-            BuildMetadataUpdater.main(allArgs.toArray(String[]::new));
+            String[] ags = allArgs.toArray(new String[0]);
+            BuildMetadataUpdater.main(ags);
             assertTrue(Files.exists(file), file + " not created");
             BuildMetadata meta = new BuildMetadata(BuildMetadataTest.class,
                     BuildMetadata.Type.PROJECT, Collections.emptyMap());
-            Map<String, String> map = BuildMetadata.properties(
-                    Files.readString(file.resolve("build.properties")));
+            
+            String content = new String(Files.readAllBytes(file.resolve("build.properties")), UTF_8);
+            Map<String, String> map = BuildMetadata.properties(content);
             meta.buildProperties = map;
             tester.accept(meta);
         } finally {
