@@ -166,7 +166,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <inherited>false</inherited>
                 <configuration>
-                    <source>8</source>
+                    <source>${java.source.version}</source>
                     <additionalOptions/>
                 </configuration>
             </plugin>
@@ -190,7 +190,7 @@
                     <version>${maven-javadoc-plugin.version}</version>
                     <inherited>false</inherited>
                     <configuration>
-                        <source>8</source>
+                        <source>${java.source.version}</source>
                         <additionalOptions/>
                     </configuration>
                 </plugin>
