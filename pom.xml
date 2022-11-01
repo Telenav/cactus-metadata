@@ -107,20 +107,24 @@
 
     <build>
         <plugins>
-            <!--            <plugin>
+            <plugin>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>cactus-metadata-maven-plugin</artifactId>
-                <version>${cactus.previous.version}</version>
+                <version>${metadata.previous.version}</version>
                 <executions>
                     <execution>
                         <id>generate-metainfo</id>
                         <goals>
+                            <goal>project-information</goal>
                             <goal>build-metadata</goal>
                         </goals>
                         <phase>generate-sources</phase>
+                        <configuration>
+                            <verb>Updating Metadata</verb>
+                        </configuration>
                     </execution>
                 </executions>
-            </plugin>-->
+            </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
