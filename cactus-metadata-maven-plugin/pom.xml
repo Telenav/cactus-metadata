@@ -4,11 +4,11 @@
 
     <parent>
         <groupId>com.telenav.cactus.metadata</groupId>
-        <artifactId>cactus-metadata-parent</artifactId>
+        <artifactId>cactusmetadata-parent</artifactId>
         <version>1.0.3</version>
     </parent>
 
-    <artifactId>cactus-metadata-maven-plugin</artifactId>
+    <artifactId>cactusmetadata-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
     <description>Generates build.properties and project.properties into target/classes.</description>
@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>cactus-metadata</artifactId>
+            <artifactId>cactusmetadata</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
