@@ -18,7 +18,7 @@
     </parent>
 
     <groupId>com.telenav.cactus.metadata</groupId>
-    <artifactId>cactus-metadata-parent</artifactId>
+    <artifactId>cactusmetadata-parent</artifactId>
     <version>1.0.3</version>
     
     <packaging>pom</packaging>
