@@ -35,6 +35,8 @@
     <properties>
         <!-- LEAVE THIS AS 8!!! -->
         <java.source.version>8</java.source.version>
+        <!-- XXX probably no longer needed -->
+        <cactus.previous.version>1.5.44</cactus.previous.version>
         <metadata.previous.version>1.0.2</metadata.previous.version>
         <junit5.version>5.9.1</junit5.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
