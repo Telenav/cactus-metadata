@@ -20,6 +20,8 @@
     <groupId>com.telenav.cactus.metadata</groupId>
     <artifactId>cactus-metadata-parent</artifactId>
     <version>1.0.2</version>
+    
+    <name>${project.artifactId}</name>
 
     <packaging>pom</packaging>
 
