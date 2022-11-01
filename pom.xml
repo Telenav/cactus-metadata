@@ -23,7 +23,6 @@
 
     <packaging>pom</packaging>
 
-    <name>Cactus Metadata Parent</name>
     <description>The cactus project generates build metadata consumed by KivaKit and
         other projects, and provides a Maven plugin for performing git operations
         and manipulating large trees of projects managed through git submodules.</description>

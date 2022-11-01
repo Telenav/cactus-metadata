@@ -11,7 +11,6 @@
     <artifactId>cactus-metadata-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
-    <name>Cactus Metadata Maven Plugin</name>
     <description>Generates build.properties and project.properties into target/classes.</description>
 
     <dependencies>
