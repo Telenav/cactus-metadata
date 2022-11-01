@@ -51,7 +51,7 @@
         <dependencies>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>cactus-metadata</artifactId>
+                <artifactId>cactusmetadata</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
