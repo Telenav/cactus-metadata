@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>cactusmetadata</artifactId>
+            <artifactId>cactus-metadata</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
