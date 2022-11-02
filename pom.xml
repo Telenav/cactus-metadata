@@ -35,8 +35,6 @@
     <properties>
         <!-- LEAVE THIS AS 8!!! -->
         <java.source.version>8</java.source.version>
-        <!-- XXX probably no longer needed -->
-        <cactus.previous.version>1.5.45</cactus.previous.version>
         <metadata.previous.version>1.0.2</metadata.previous.version>
         <junit5.version>5.9.1</junit5.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
@@ -180,11 +178,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>com.telenav.cactus</groupId>
-                    <artifactId>cactus-maven-plugin</artifactId>
-                    <version>${cactus.previous.version}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven-jar-plugin.version}</version>
@@ -252,14 +245,14 @@
     <inceptionYear>2021</inceptionYear>
 
     <scm>
-        <connection>scm:git:https://github.com/Telenav/cactus.git</connection>
-        <developerConnection>scm:git:https://github.com/Telenav/cactus.git</developerConnection>
-        <url>https://github.com/Telenav/cactus</url>
+        <connection>scm:git:https://github.com/Telenav/cactus-metadata.git</connection>
+        <developerConnection>scm:git:https://github.com/Telenav/cactus-metadata.git</developerConnection>
+        <url>https://github.com/Telenav/cactus-metadata</url>
     </scm>
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/Telenav/cactus/issues</url>
+        <url>https://github.com/Telenav/cactus-metadata/issues</url>
     </issueManagement>
 
 </project>
