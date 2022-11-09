@@ -15,11 +15,11 @@
 
     <parent>
         <groupId>com.telenav.cactus.metadata</groupId>
-        <artifactId>cactusmetadata-parent</artifactId>
+        <artifactId>cactus-metadata-parent</artifactId>
         <version>1.0.3</version>
     </parent>
 
-    <artifactId>cactusmetadata</artifactId>
+    <artifactId>cactus-metadata</artifactId>
     
     <description>
         The cactus-metadata project generates build metadata consumed by
