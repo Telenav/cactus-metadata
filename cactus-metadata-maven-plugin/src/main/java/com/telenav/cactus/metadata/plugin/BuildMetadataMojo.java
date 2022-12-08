@@ -17,6 +17,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 package com.telenav.cactus.metadata.plugin;
 
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
@@ -41,13 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_HASH;
 import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_TIMESTAMP;
@@ -83,6 +84,7 @@ import static org.apache.maven.plugins.annotations.ResolutionScope.NONE;
 public class BuildMetadataMojo extends AbstractMojo
 {
     private static final Map<String, Optional<Path>> BINARY_PATH_CACHE = new ConcurrentHashMap<>();
+
     private static final DateTimeFormatter GIT_LOG_FORMAT = new DateTimeFormatterBuilder()
             .appendValue(ChronoField.YEAR, 4).appendLiteral("-")
             .appendValue(ChronoField.MONTH_OF_YEAR, 2).appendLiteral("-")
@@ -98,12 +100,11 @@ public class BuildMetadataMojo extends AbstractMojo
             .parseLenient()
             .toFormatter();
 
-    /**
-     * The relative path to the destination directory.
-     */
-    @Parameter(property = "cactus.project-properties-destination",
-            defaultValue = "target/classes/project.properties")
+    @Parameter(property = "cactus.project-properties-destination")
     private String projectPropertiesDestination;
+
+    @Parameter(property = "cactus.build-properties-destination")
+    private String buildPropertiesDestination;
 
     @Parameter(property = "cactus.build.metadata.skip")
     private boolean skip;
@@ -152,16 +153,25 @@ public class BuildMetadataMojo extends AbstractMojo
             log.info("Not writing project metadata for a non-java project.");
             return;
         }
-        Path propsFile = project.getBasedir().toPath().resolve(
+
+        Path projectPropertiesFile = project.getBasedir().toPath().resolve(
                 projectPropertiesDestination);
-        if (!exists(propsFile.getParent()))
+        if (!exists(projectPropertiesFile.getParent()))
         {
-            createDirectories(propsFile.getParent());
+            createDirectories(projectPropertiesFile.getParent());
         }
+
+        Path buildPropertiesFile = project.getBasedir().toPath().resolve(
+                buildPropertiesDestination);
+        if (!exists(buildPropertiesFile.getParent()))
+        {
+            createDirectories(buildPropertiesFile.getParent());
+        }
+
         String propertiesFileContent = projectProperties(project);
-        writeString(propsFile, propertiesFileContent);
+        writeString(projectPropertiesFile, propertiesFileContent);
         List<String> args = new ArrayList<>(8);
-        args.add(propsFile.getParent().toString());
+        args.add(buildPropertiesFile.toString());
         Optional<Path> checkout = checkoutRoot(project.getBasedir().toPath());
         if (!checkout.isPresent())
         {
@@ -190,20 +200,18 @@ public class BuildMetadataMojo extends AbstractMojo
         {
             log.info("Wrote project.properties");
             log.info("------------------------");
-            log.info("to " + propsFile + "\n");
+            log.info("to " + projectPropertiesFile + "\n");
             log.info(propertiesFileContent + "\n");
-            Path buildProps = propsFile.getParent().resolve(
-                    "build.properties");
-            if (exists(buildProps))
+            if (exists(buildPropertiesFile))
             {
                 log.info("Wrote build.properties");
                 log.info("----------------------");
-                log.info("to " + buildProps + "\n");
-                log.info(readString(buildProps));
+                log.info("to " + buildPropertiesFile + "\n");
+                log.info(readString(buildPropertiesFile));
             }
             else
             {
-                log.warn("No build file was generated in " + buildProps);
+                log.warn("No build file was generated in " + buildPropertiesFile);
             }
             return null;
         });
@@ -283,7 +291,8 @@ public class BuildMetadataMojo extends AbstractMojo
         return Optional.of(proc.exitValue() == 0);
     }
 
-    private static Optional<String> runGit(Path in, String... args) throws IOException, InterruptedException, ExecutionException
+    private static Optional<String> runGit(Path in,
+                                           String... args) throws IOException, InterruptedException, ExecutionException
     {
         Optional<Path> gitBinary = findExecutable("git");
         if (!gitBinary.isPresent())
@@ -341,7 +350,7 @@ public class BuildMetadataMojo extends AbstractMojo
     // A few methods borrowed from PathUtils in cactus-utils to avoid
     // creating a circular family-to-family dependency
     private static Optional<Path> findExecutable(String name,
-            Path... additionalSearchLocations)
+                                                 Path... additionalSearchLocations)
     {
         if (additionalSearchLocations.length == 0)
         {
@@ -354,7 +363,7 @@ public class BuildMetadataMojo extends AbstractMojo
     }
 
     private static Optional<Path> _findExecutable(String name,
-            Path... additionalSearchLocations)
+                                                  Path... additionalSearchLocations)
     {
         if (name.indexOf(File.separatorChar) >= 0)
         {
@@ -390,7 +399,7 @@ public class BuildMetadataMojo extends AbstractMojo
     }
 
     public static Optional<Path> findExecutable(Iterable<? extends Path> in,
-            String name)
+                                                String name)
     {
         for (Path path : in)
         {
@@ -413,11 +422,12 @@ public class BuildMetadataMojo extends AbstractMojo
     {
         String prop = System.getProperty(what);
         return prop == null
-               ? fallback.get()
-               : Paths.get(prop);
+                ? fallback.get()
+                : Paths.get(prop);
     }
 
-    private static Optional<String> repoHead(Path repo) throws IOException, InterruptedException, InterruptedException, ExecutionException
+    private static Optional<String> repoHead(
+            Path repo) throws IOException, InterruptedException, InterruptedException, ExecutionException
     {
         // "rev-parse", "HEAD"
         return runGit(repo, "rev-parse", "HEAD");
@@ -439,7 +449,7 @@ public class BuildMetadataMojo extends AbstractMojo
     }
 
     private static Optional<ZonedDateTime> fromGitLogFormat(String txt,
-            Logger log)
+                                                            Logger log)
     {
         if (txt.isEmpty())
         {
@@ -505,5 +515,4 @@ public class BuildMetadataMojo extends AbstractMojo
         // think so anyway, but this can't hurt).
         bldr.environment().put("GIT_TERMINAL_PROMPT", "0");
     }
-
 }

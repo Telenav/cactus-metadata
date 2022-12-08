@@ -17,11 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 package com.telenav.cactus.metadata;
 
-import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_HASH;
-import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_TIMESTAMP;
-import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_REPO_CLEAN;
-import static com.telenav.cactus.metadata.BuildMetadata.todaysLocalDate;
-import static com.telenav.cactus.metadata.BuildName.toBuildNumber;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,10 +26,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-
-import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -43,13 +35,23 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.Test;
 
+import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_HASH;
+import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_COMMIT_TIMESTAMP;
+import static com.telenav.cactus.metadata.BuildMetadata.KEY_GIT_REPO_CLEAN;
+import static com.telenav.cactus.metadata.BuildMetadata.todaysLocalDate;
+import static com.telenav.cactus.metadata.BuildName.toBuildNumber;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- *
  * @author timb
  */
 public class BuildMetadataTest
@@ -57,13 +59,25 @@ public class BuildMetadataTest
 
     static final ZonedDateTime ZDT = ZonedDateTime.parse("2021-03-01T15:36:09Z",
             ISO_DATE_TIME);
+
     static final String SOME_HASH = "a304c27daedf56b9374a382ac06f55c7415b2d49";
+
     static final String SOME_HASH_SHORT = "a304c27";
+
+    static Map<String, String> map(String commitHash, ZonedDateTime commitDateIso, boolean isClean)
+    {
+        Map<String, String> result = new TreeMap<>();
+        result.put(KEY_GIT_COMMIT_HASH, commitHash);
+        result.put(KEY_GIT_REPO_CLEAN, Boolean.toString(isClean));
+        result.put(KEY_GIT_COMMIT_TIMESTAMP, commitDateIso.format(ISO_INSTANT));
+        return result;
+    }
 
     @Test
     public void testCleanRepo()
     {
-        if (tooCloseToMidnightGMT()) {
+        if (tooCloseToMidnightGMT())
+        {
             // This can fail if this test runs at EXACTLY the right
             // time near midnight GMT, and we compute our expected local date
             // before midnight and the metadata is instantiated after
@@ -129,37 +143,47 @@ public class BuildMetadataTest
         int buildNumber = md.currentBuildNumber();
         assertNotEquals(toBuildNumber(currentDate), toBuildNumber(gitDate),
                 "Should not produce the same build number: " + currentDate
-                + " and " + gitDate);
+                        + " and " + gitDate);
         assertEquals(toBuildNumber(currentDate), buildNumber);
         assertNotEquals(toBuildNumber(gitDate), buildNumber);
     }
 
     @Test
-    public void testUpdater() throws Exception
+    public void testGitParsedOutputIsViable() throws Exception
     {
-        if (tooCloseToMidnightGMT())
-        {
-            // This can fail if this test runs at EXACTLY the right
-            // time near midnight GMT, and we compute our expected local date
-            // before midnight and the metadata is instantiated after
-            //
-            // Unlikely, but annoying to debug.
-            return;
-        }
+        // This is what the date we really store looks like:
+        String txt = "2022-05-30T20:51:39Z[GMT]";
         withTempFile(md ->
-        {
-            assertNotNull(md);
-            assertTrue(md.isCleanRepository());
-            assertEquals(SOME_HASH, md.gitCommitHash().get());
-            LocalDate currentDate = todaysLocalDate();
-            LocalDate gitDate = ZDT.toLocalDate();
-            assertEquals(gitDate, md.currentBuildDate());
-            assertNotEquals(currentDate, md.currentBuildDate());
-            assertEquals(toBuildNumber(gitDate), md.currentBuildNumber());
-        },
+                {
+                    ZonedDateTime zdt = md.gitCommitTimestamp().get();
+                    assertEquals(ZoneId.of("GMT"), zdt.getZone());
+                    assertEquals(20, zdt.getHour());
+                    assertEquals(51, zdt.getMinute());
+                    assertEquals(39, zdt.getSecond());
+                    assertEquals(Month.MAY, zdt.getMonth());
+                    assertEquals(30, zdt.getDayOfMonth());
+                    assertEquals(2022, zdt.getYear());
+                },
                 KEY_GIT_REPO_CLEAN, "true",
-                KEY_GIT_COMMIT_HASH, SOME_HASH,
-                KEY_GIT_COMMIT_TIMESTAMP, ZDT.format(ISO_DATE_TIME));
+                KEY_GIT_COMMIT_TIMESTAMP, txt,
+                KEY_GIT_COMMIT_HASH, SOME_HASH
+        );
+    }
+
+    @Test
+    public void testInvalidCleanDirty() throws Exception
+    {
+        try
+        {
+            withInvalidArgs(KEY_GIT_REPO_CLEAN, "snorkels",
+                    KEY_GIT_COMMIT_HASH, SOME_HASH,
+                    KEY_GIT_COMMIT_TIMESTAMP, ZDT.format(ISO_DATE_TIME));
+            fail("Exception should have been thrown");
+        }
+        catch (IllegalArgumentException ex)
+        {
+            // ok
+        }
     }
 
     @Test
@@ -179,30 +203,21 @@ public class BuildMetadataTest
     }
 
     @Test
-    public void testInvalidCleanDirty() throws Exception
-    {
-        try {
-            withInvalidArgs(KEY_GIT_REPO_CLEAN, "snorkels",
-                    KEY_GIT_COMMIT_HASH, SOME_HASH,
-                    KEY_GIT_COMMIT_TIMESTAMP, ZDT.format(ISO_DATE_TIME));
-            fail("Exception should have been thrown");
-        } catch (IllegalArgumentException ex) {
-            // ok
-        }
-    }
-
-    @Test
     public void testInvalidHash() throws Exception
     {
-        try {
+        try
+        {
             withInvalidArgs(KEY_GIT_REPO_CLEAN, "true",
                     KEY_GIT_COMMIT_HASH, "ABCthis is not a hash",
                     KEY_GIT_COMMIT_TIMESTAMP, ZDT.format(ISO_DATE_TIME));
             fail("Exception should have been thrown");
-        } catch (IllegalArgumentException ex) {
+        }
+        catch (IllegalArgumentException ex)
+        {
             // ok
         }
     }
+
     @Test
     public void testInvalidNumberOfArguments() throws Exception
     {
@@ -213,36 +228,51 @@ public class BuildMetadataTest
                     KEY_GIT_COMMIT_TIMESTAMP, ZDT.format(ISO_DATE_TIME),
                     "OOPS.");
             fail("Exception should have been thrown");
-        } catch (IllegalArgumentException ex) {
+        }
+        catch (IllegalArgumentException ex)
+        {
             // ok
         }
     }
 
     @Test
-    public void testGitParsedOutputIsViable() throws Exception
+    public void testUpdater() throws Exception
     {
-        // This is what the date we really store looks like:
-        String txt = "2022-05-30T20:51:39Z[GMT]";
-        withTempFile(md ->
+        if (tooCloseToMidnightGMT())
         {
-            ZonedDateTime zdt = md.gitCommitTimestamp().get();
-            assertEquals(ZoneId.of("GMT"), zdt.getZone());
-            assertEquals(20, zdt.getHour());
-            assertEquals(51, zdt.getMinute());
-            assertEquals(39, zdt.getSecond());
-            assertEquals(Month.MAY, zdt.getMonth());
-            assertEquals(30, zdt.getDayOfMonth());
-            assertEquals(2022, zdt.getYear());
-        },
+            // This can fail if this test runs at EXACTLY the right
+            // time near midnight GMT, and we compute our expected local date
+            // before midnight and the metadata is instantiated after
+            //
+            // Unlikely, but annoying to debug.
+            return;
+        }
+        withTempFile(md ->
+                {
+                    assertNotNull(md);
+                    assertTrue(md.isCleanRepository());
+                    assertEquals(SOME_HASH, md.gitCommitHash().get());
+                    LocalDate currentDate = todaysLocalDate();
+                    LocalDate gitDate = ZDT.toLocalDate();
+                    assertEquals(gitDate, md.currentBuildDate());
+                    assertNotEquals(currentDate, md.currentBuildDate());
+                    assertEquals(toBuildNumber(gitDate), md.currentBuildNumber());
+                },
                 KEY_GIT_REPO_CLEAN, "true",
-                KEY_GIT_COMMIT_TIMESTAMP, txt,
-                KEY_GIT_COMMIT_HASH, SOME_HASH
-        );
+                KEY_GIT_COMMIT_HASH, SOME_HASH,
+                KEY_GIT_COMMIT_TIMESTAMP, ZDT.format(ISO_DATE_TIME));
+    }
+
+    private static boolean tooCloseToMidnightGMT()
+    {
+        ZonedDateTime when = ZonedDateTime.now().withZoneSameInstant(ZoneId.of("GMT"));
+        return when.getHour() == 23 && when.getMinute() >= 59;
     }
 
     private static void withInvalidArgs(String... args) throws Exception
     {
-        withTempFile(meta -> {
+        withTempFile(meta ->
+        {
             fail("Should not get invoked for " + Arrays.toString(args)
                     + " but got " + meta);
         }, args);
@@ -253,8 +283,9 @@ public class BuildMetadataTest
     {
         Path temp = Paths.get(System.getProperty("java.io.tmpdir"));
         Path file = temp.resolve("mdtest-" + System.currentTimeMillis() + "-"
-                + ThreadLocalRandom.current().nextInt(100000));
-        try {
+                + ThreadLocalRandom.current().nextInt(100000)).resolve("build.properties");
+        try
+        {
             List<String> allArgs = new LinkedList<>(Arrays.asList(args));
             allArgs.add(0, file.toString());
             String[] ags = allArgs.toArray(new String[0]);
@@ -262,36 +293,26 @@ public class BuildMetadataTest
             assertTrue(Files.exists(file), file + " not created");
             BuildMetadata meta = new BuildMetadata(BuildMetadataTest.class,
                     BuildMetadata.Type.PROJECT, Collections.emptyMap());
-            
-            String content = new String(Files.readAllBytes(file.resolve("build.properties")), UTF_8);
+
+            String content = new String(Files.readAllBytes(file), UTF_8);
             Map<String, String> map = BuildMetadata.properties(content);
             meta.buildProperties = map;
             tester.accept(meta);
-        } finally {
-            if (Files.exists(file)) {
-                if (Files.exists(file.resolve("build.properties"))) {
+        }
+        finally
+        {
+            if (Files.exists(file))
+            {
+                if (Files.exists(file.resolve("build.properties")))
+                {
                     Files.delete(file.resolve("build.properties"));
                 }
-                if (Files.exists(file.resolve("project.properties"))) {
+                if (Files.exists(file.resolve("project.properties")))
+                {
                     Files.delete(file.resolve("project.properties"));
                 }
                 Files.delete(file);
             }
         }
-    }
-
-    private static boolean tooCloseToMidnightGMT()
-    {
-        ZonedDateTime when = ZonedDateTime.now().withZoneSameInstant(ZoneId.of("GMT"));
-        return when.getHour() == 23 && when.getMinute() >= 59;
-    }
-
-    static Map<String, String> map(String commitHash, ZonedDateTime commitDateIso, boolean isClean)
-    {
-        Map<String, String> result = new TreeMap<>();
-        result.put(KEY_GIT_COMMIT_HASH, commitHash);
-        result.put(KEY_GIT_REPO_CLEAN, Boolean.toString(isClean));
-        result.put(KEY_GIT_COMMIT_TIMESTAMP, commitDateIso.format(ISO_INSTANT));
-        return result;
     }
 }

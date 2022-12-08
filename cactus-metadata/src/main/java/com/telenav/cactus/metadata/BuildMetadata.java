@@ -65,13 +65,13 @@ public class BuildMetadata
     private static final Map<Class<?>, BuildMetadata> projectToMetadata = new ConcurrentHashMap<>();
 
     /**
-     * @param projectType A class in the caller's project for loading resources
+     * @param type A class in the caller's project for loading resources
      * @return Metadata for the given project
      */
-    public static BuildMetadata buildMetaData(Class<?> projectType)
+    public static BuildMetadata buildMetaData(Class<?> type)
     {
-        return projectToMetadata.computeIfAbsent(projectType,
-                ignored -> new BuildMetadata(projectType, Type.PROJECT,
+        return projectToMetadata.computeIfAbsent(type,
+                ignored -> new BuildMetadata(type, Type.PROJECT,
                         emptyMap()));
     }
 
@@ -118,12 +118,12 @@ public class BuildMetadata
     /**
      * A class in the caller's project for loading resources
      */
-    private final Class<?> projectType;
+    private final Class<?> type;
 
     /**
      * The type of metadata
      */
-    private final Type type;
+    private final Type metadataType;
 
     /**
      * Build property map
@@ -140,11 +140,11 @@ public class BuildMetadata
      */
     private final Map<String, String> additionalProperties;
 
-    BuildMetadata(Class<?> projectType, Type type,
+    BuildMetadata(Class<?> type, Type metadataType,
             Map<String, String> additionalProperties)
     {
-        this.projectType = projectType;
         this.type = type;
+        this.metadataType = metadataType;
         this.additionalProperties = additionalProperties;
     }
 
@@ -165,7 +165,7 @@ public class BuildMetadata
         if (buildProperties == null)
         {
             // If we are metadata for the current build,
-            if (type == Type.CURRENT)
+            if (metadataType == Type.CURRENT)
             {
                 // then use current build metadata based on the time
                 Map<String, String> properties = new TreeMap<String, String>();
@@ -181,8 +181,8 @@ public class BuildMetadata
             else
             {
                 // otherwise, use the project's metadata.
-                buildProperties = properties(metadata(projectType,
-                        "/build.properties"));
+                buildProperties = properties(metadata(type,
+                        "/" + type.getSimpleName() + "-build.properties"));
                 buildProperties.putAll(additionalProperties);
             }
         }
@@ -262,8 +262,8 @@ public class BuildMetadata
     {
         if (projectProperties == null || projectProperties.isEmpty())
         {
-            projectProperties = properties(metadata(projectType,
-                    "/project.properties"));
+            projectProperties = properties(metadata(type,
+                    "/" + type.getSimpleName() + "-project.properties"));
         }
 
         return projectProperties;

@@ -84,7 +84,7 @@ public class ProjectInformationMojo extends AbstractMojo
 
     private CharSequence generateInfo(MavenProject project)
     {
-        return "┋ " + verb() + " " + project.getName();
+        return verb() + " " + project.getName();
     }
 
     @Override

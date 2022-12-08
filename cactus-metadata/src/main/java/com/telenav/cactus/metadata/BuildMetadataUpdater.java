@@ -47,7 +47,7 @@ import static java.util.Collections.emptyMap;
 public class BuildMetadataUpdater
 {
     /**
-     * Writes a build.properties file out to the given output folder with the following entries:
+     * Writes a build.properties file out to the given output file with the following entries:
      *
      * <ul>
      *     <li>build-number - The current build number since the start of the KivaKit epoch</li>
@@ -84,9 +84,9 @@ public class BuildMetadataUpdater
             {
                 // Get output path and ensure it exists,
                 Path outputPath = Paths.get(arguments[0]);
-                if (!Files.isDirectory(outputPath))
+                if (!Files.isDirectory(outputPath.getParent()))
                 {
-                    Files.createDirectory(outputPath);
+                    Files.createDirectory(outputPath.getParent());
                 }
                 Map<String, String> additionalArguments
                         = collectAdditionalArguments(arguments);
@@ -101,7 +101,7 @@ public class BuildMetadataUpdater
                 }
 
                 // and write them to the output folder.
-                try (PrintStream out = new PrintStream(outputPath.resolve("build.properties").toFile()))
+                try (PrintStream out = new PrintStream(outputPath.toFile()))
                 {
                     out.println(String.join("\n", lines));
                 }
